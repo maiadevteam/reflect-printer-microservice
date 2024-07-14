@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { exec } from 'child_process';
 import { v4 as uuidv4 } from 'uuid';
+import sharp from 'sharp';
 
 export async function POST(request: Request) {
   try {
@@ -18,16 +19,24 @@ export async function POST(request: Request) {
     await fs.promises.mkdir(path.dirname(tempImagePath), { recursive: true });
     await fs.promises.writeFile(tempImagePath, imageBuffer);
 
+    // Convert image to 300 DPI using sharp
+    const outputImagePath = path.join(process.cwd(), 'temp', `${uuidv4()}-300dpi.png`);
+    await sharp(tempImagePath)
+      .resize({ width: 1200, height: 1800, fit: 'contain' }) // 4R at 300 DPI is 1200x1800 pixels
+      .toFile(outputImagePath);
+
+    // Read the converted image
+    const updatedImageBuffer = await fs.promises.readFile(outputImagePath);
+
     // Create a new PDF document
     const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([1200, 1800]); // Set page size for 4R (4" x 6")
+    const page = pdfDoc.addPage([1200, 1800]);
     const { width, height } = page.getSize();
 
     // Embed the uploaded image into the PDF
-    const embeddedImage = await pdfDoc.embedPng(imageBuffer);
+    const embeddedImage = await pdfDoc.embedPng(updatedImageBuffer);
 
-    // Calculate dimensions for centering the image on the page
-    const imageWidth = width; // Set image width to match page width
+    const imageWidth = width; 
     const imageHeight = (imageWidth / embeddedImage.width) * embeddedImage.height;
 
     const x = (width - imageWidth) / 2;
