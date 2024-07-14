@@ -20,14 +20,14 @@ export async function POST(request: Request) {
 
     // Create a new PDF document
     const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([400, 600]); // Set page size for 4R (4" x 6")
+    const page = pdfDoc.addPage([1200, 1800]); // Set page size for 4R (4" x 6")
     const { width, height } = page.getSize();
 
     // Embed the uploaded image into the PDF
     const embeddedImage = await pdfDoc.embedPng(imageBuffer);
 
     // Calculate dimensions for centering the image on the page
-    const imageWidth = 400; // Set image width to match page width
+    const imageWidth = width; // Set image width to match page width
     const imageHeight = (imageWidth / embeddedImage.width) * embeddedImage.height;
 
     const x = (width - imageWidth) / 2;
